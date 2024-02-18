@@ -22,7 +22,6 @@
     <string name="mode_deg" msgid="1146123354434332479">"டிகிரி"</string>
     <string name="mode_rad" msgid="1434228830085760996">"ரேடியன்"</string>
     <string name="cleared" msgid="3952521190281880880">"அழிக்கப்பட்டது"</string>
-    <string name="del" msgid="5878069000864178910">"நீக்கு"</string>
     <string name="desc_const_e" msgid="1889187337970539507">"ஆய்லரின் எண்"</string>
     <string name="desc_const_pi" msgid="5430918714009441655">"பை"</string>
     <string name="desc_dec_point" msgid="5725254504360445023">"புள்ளி"</string>
@@ -58,8 +57,6 @@
     <string name="desc_inv_on" msgid="2515675590767677178">"நேர்மாறு சார்புகளை மறை"</string>
     <string name="desc_formula" msgid="8056588859637585007">"சூத்திரம் இல்லை"</string>
     <string name="desc_result" msgid="1794073190203126821">"முடிவு இல்லை"</string>
-    <string name="desc_num_pad" msgid="515720457459745571">"எண்களும் அடிப்படை செயல்பாடுகளும்"</string>
-    <string name="desc_adv_pad" msgid="3794276256462677914">"மேம்பட்ட செயல்பாடுகள்"</string>
     <string name="error_nan" msgid="5674077944929888710">"எண் அல்ல"</string>
     <string name="error_syntax" msgid="4786987111228645602">"தவறான கோவை"</string>
     <string name="error_aborted" msgid="3402238176316342537">"நிறுத்தப்பட்டது"</string>

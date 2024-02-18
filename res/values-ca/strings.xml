@@ -22,7 +22,6 @@
     <string name="mode_deg" msgid="1146123354434332479">"deg"</string>
     <string name="mode_rad" msgid="1434228830085760996">"rad"</string>
     <string name="cleared" msgid="3952521190281880880">"esborrat"</string>
-    <string name="del" msgid="5878069000864178910">"sup"</string>
     <string name="desc_const_e" msgid="1889187337970539507">"nombre d\'Euler"</string>
     <string name="desc_const_pi" msgid="5430918714009441655">"pi"</string>
     <string name="desc_dec_point" msgid="5725254504360445023">"punt"</string>
@@ -58,8 +57,6 @@
     <string name="desc_inv_on" msgid="2515675590767677178">"amaga les funcions inverses"</string>
     <string name="desc_formula" msgid="8056588859637585007">"No hi ha cap fórmula"</string>
     <string name="desc_result" msgid="1794073190203126821">"No hi ha cap resultat"</string>
-    <string name="desc_num_pad" msgid="515720457459745571">"Números i operacions bàsiques"</string>
-    <string name="desc_adv_pad" msgid="3794276256462677914">"Operacions avançades"</string>
     <string name="error_nan" msgid="5674077944929888710">"No és una xifra"</string>
     <string name="error_syntax" msgid="4786987111228645602">"Expr. incorrecta"</string>
     <string name="error_aborted" msgid="3402238176316342537">"Anul·lat"</string>

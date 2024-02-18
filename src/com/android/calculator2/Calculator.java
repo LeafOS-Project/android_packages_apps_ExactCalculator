@@ -25,29 +25,17 @@
 
 package com.android.calculator2;
 
-import android.animation.Animator;
-import android.animation.Animator.AnimatorListener;
-import android.animation.AnimatorListenerAdapter;
+import static com.android.calculator2.CalculatorFormula.OnFormulaContextMenuClickListener;
+
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.animation.PropertyValuesHolder;
-import android.app.ActionBar;
-import android.app.Activity;
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
 import android.content.ClipData;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.StringRes;
-import androidx.core.content.ContextCompat;
-import androidx.viewpager.widget.ViewPager;
 import android.text.Editable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -55,7 +43,6 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
-import android.util.Property;
 import android.view.ActionMode;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
@@ -63,14 +50,19 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.OnLongClickListener;
-import android.view.ViewAnimationUtils;
-import android.view.ViewGroupOverlay;
 import android.view.ViewTreeObserver;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.HorizontalScrollView;
 import android.widget.TextView;
-import android.widget.Toolbar;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.constraintlayout.motion.widget.MotionLayout;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 import com.android.calculator2.CalculatorFormula.OnTextSizeChangeListener;
 
@@ -83,12 +75,9 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.text.DecimalFormatSymbols;
 
-import static com.android.calculator2.CalculatorFormula.OnFormulaContextMenuClickListener;
-
-public class Calculator extends Activity
-        implements OnTextSizeChangeListener, OnLongClickListener,
-        AlertDialogFragment.OnClickListener, Evaluator.EvaluationListener /* for main result */,
-        DragLayout.CloseCallback, DragLayout.DragCallback {
+public class Calculator extends AppCompatActivity
+        implements OnTextSizeChangeListener, AlertDialogFragment.OnClickListener,
+        Evaluator.EvaluationListener /* for main result */ {
 
     private static final String TAG = "Calculator";
     /**
@@ -105,7 +94,6 @@ public class Calculator extends Activity
                         // during reinitialization.  Do not animate on completion.
         INIT_FOR_RESULT,  // Identical to INIT, but evaluation is known to terminate
                           // with result, and current expression has been copied to history.
-        ANIMATE,        // Result computed, animation to enlarge result window in progress.
         RESULT,         // Result displayed, formula invisible.
                         // If we are in RESULT state, the formula was evaluated without
                         // error to initial precision.
@@ -114,7 +102,7 @@ public class Calculator extends Activity
                         // Display similar to INPUT state.
     }
     // Normal transition sequence is
-    // INPUT -> EVALUATE -> ANIMATE -> RESULT (or ERROR) -> INPUT
+    // INPUT -> EVALUATE -> RESULT (or ERROR) -> INPUT
     // A RESULT -> ERROR transition is possible in rare corner cases, in which
     // a higher precision evaluation exposes an error.  This is possible, since we
     // initially evaluate assuming we were given a well-defined problem.  If we
@@ -122,25 +110,11 @@ public class Calculator extends Activity
     // unless we are asked for enough precision that we can distinguish the argument from zero.
     // ERROR and RESULT are translated to INIT or INIT_FOR_RESULT state if the application
     // is restarted in that state.  This leads us to recompute and redisplay the result
-    // ASAP. We avoid saving the ANIMATE state or activating history in that state.
+    // ASAP.
     // In INIT_FOR_RESULT, and RESULT state, a copy of the current
-    // expression has been saved in the history db; in the other non-ANIMATE states,
-    // it has not.
+    // expression has been saved in the history db; in the other states, it has not.
     // TODO: Possibly save a bit more information, e.g. its initial display string
     // or most significant digit position, to speed up restart.
-
-    private final Property<TextView, Integer> TEXT_COLOR =
-            new Property<TextView, Integer>(Integer.class, "textColor") {
-        @Override
-        public Integer get(TextView textView) {
-            return textView.getCurrentTextColor();
-        }
-
-        @Override
-        public void set(TextView textView, Integer textColor) {
-            textView.setTextColor(textColor);
-        }
-    };
 
     private static final String NAME = "Calculator";
     private static final String KEY_DISPLAY_STATE = NAME + "_display_state";
@@ -150,10 +124,6 @@ public class Calculator extends Activity
      */
     private static final String KEY_EVAL_STATE = NAME + "_eval_state";
     private static final String KEY_INVERSE_MODE = NAME + "_inverse_mode";
-    /**
-     * Associated value is an boolean holding the visibility state of the toolbar.
-     */
-    private static final String KEY_SHOW_TOOLBAR = NAME + "_show_toolbar";
 
     private final ViewTreeObserver.OnPreDrawListener mPreDrawListener =
             new ViewTreeObserver.OnPreDrawListener() {
@@ -247,27 +217,17 @@ public class Calculator extends Activity
     private CalculatorState mCurrentState;
     private Evaluator mEvaluator;
 
-    private CalculatorDisplay mDisplayView;
     private TextView mModeView;
     private CalculatorFormula mFormulaText;
     private CalculatorResult mResultText;
     private HorizontalScrollView mFormulaContainer;
-    private DragLayout mDragLayout;
-
-    private ViewPager mPadViewPager;
-    private View mDeleteButton;
-    private View mClearButton;
-    private View mEqualButton;
-    private View mMainCalculator;
+    private MotionLayout mMainCalculator;
 
     private TextView mInverseToggle;
     private TextView mModeToggle;
 
     private View[] mInvertibleButtons;
     private View[] mInverseButtons;
-
-    private View mCurrentButton;
-    private Animator mCurrentAnimator;
 
     // Characters that were recently entered at the end of the display that have not yet
     // been added to the underlying expression.
@@ -295,7 +255,7 @@ public class Calculator extends Activity
             case EVALUATE:
             case INPUT:
                 return savedState;
-            default:  // Includes ANIMATE state.
+            default:
                 throw new AssertionError("Impossible saved state");
         }
     }
@@ -322,11 +282,6 @@ public class Calculator extends Activity
                 mCurrentState = CalculatorState.INPUT;
                 mEvaluator.clearMain();
             }
-        }
-        if (savedInstanceState.getBoolean(KEY_SHOW_TOOLBAR, true)) {
-            showAndMaybeHideToolbar();
-        } else {
-            mDisplayView.hideToolbar();
         }
         onInverseToggled(savedInstanceState.getBoolean(KEY_INVERSE_MODE));
         // TODO: We're currently not saving and restoring scroll position.
@@ -356,41 +311,24 @@ public class Calculator extends Activity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_calculator_main);
-        setActionBar((Toolbar) findViewById(R.id.toolbar));
+        setContentView(R.layout.activity_calculator);
+        setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
 
         // Hide all default options in the ActionBar.
-        getActionBar().setDisplayOptions(0);
-
-        // Ensure the toolbar stays visible while the options menu is displayed.
-        getActionBar().addOnMenuVisibilityListener(new ActionBar.OnMenuVisibilityListener() {
-            @Override
-            public void onMenuVisibilityChanged(boolean isVisible) {
-                mDisplayView.setForceToolbarVisible(isVisible);
-            }
-        });
+        getSupportActionBar().setDisplayOptions(0);
 
         mMainCalculator = findViewById(R.id.main_calculator);
-        mDisplayView = (CalculatorDisplay) findViewById(R.id.display);
         mModeView = (TextView) findViewById(R.id.mode);
         mFormulaText = (CalculatorFormula) findViewById(R.id.formula);
         mResultText = (CalculatorResult) findViewById(R.id.result);
-        mFormulaContainer = (HorizontalScrollView) findViewById(R.id.formula_container);
+        mFormulaContainer = (HorizontalScrollView) findViewById(R.id.formula_scroll_view);
         mEvaluator = Evaluator.getInstance(this);
         mEvaluator.setCallback(mEvaluatorCallback);
         mResultText.setEvaluator(mEvaluator, Evaluator.MAIN_INDEX);
         KeyMaps.setActivity(this);
 
-        mPadViewPager = (ViewPager) findViewById(R.id.pad_pager);
-        mDeleteButton = findViewById(R.id.del);
-        mClearButton = findViewById(R.id.clr);
-        final View numberPad = findViewById(R.id.pad_numeric);
-        mEqualButton = numberPad.findViewById(R.id.eq);
-        if (mEqualButton == null || mEqualButton.getVisibility() != View.VISIBLE) {
-            mEqualButton = findViewById(R.id.pad_operator).findViewById(R.id.eq);
-        }
-        final TextView decimalPointButton = (TextView) numberPad.findViewById(R.id.dec_point);
-        decimalPointButton.setText(getDecimalSeparator());
+        final TextView dpButton = findViewById(R.id.input_pad).findViewById(R.id.dec_point);
+        dpButton.setText(getDecimalSeparator());
 
         mInverseToggle = (TextView) findViewById(R.id.toggle_inv);
         mModeToggle = (TextView) findViewById(R.id.toggle_mode);
@@ -414,24 +352,43 @@ public class Calculator extends Activity
                 findViewById(R.id.op_sqr)
         };
 
-        mDragLayout = (DragLayout) findViewById(R.id.drag_layout);
-        mDragLayout.removeDragCallback(this);
-        mDragLayout.addDragCallback(this);
-        mDragLayout.setCloseCallback(this);
+        mMainCalculator.setTransitionListener(new MotionLayout.TransitionListener() {
+            @Override
+            public void onTransitionStarted(MotionLayout motionLayout, int startId, int endId) {
+                if (startId == R.id.start_state) {
+                    showHistoryFragment();
+                }
+            }
+
+            @Override
+            public void onTransitionChange(MotionLayout motionLayout, int startId, int endId,
+                                           float progress) {
+            }
+
+            @Override
+            public void onTransitionCompleted(MotionLayout motionLayout, int currentId) {
+                if (currentId == R.id.start_state) {
+                    removeHistoryFragment();
+                }
+            }
+
+            @Override
+            public void onTransitionTrigger(MotionLayout motionLayout, int triggerId,
+                                            boolean positive, float progress) {
+            }
+        });
 
         mFormulaText.setOnContextMenuClickListener(mOnFormulaContextMenuClickListener);
         mFormulaText.setOnDisplayMemoryOperationsListener(mOnDisplayMemoryOperationsListener);
 
         mFormulaText.setOnTextSizeChangeListener(this);
         mFormulaText.addTextChangedListener(mFormulaTextWatcher);
-        mDeleteButton.setOnLongClickListener(this);
 
         if (savedInstanceState != null) {
             restoreInstanceState(savedInstanceState);
         } else {
             mCurrentState = CalculatorState.INPUT;
             mEvaluator.clearMain();
-            showAndMaybeHideToolbar();
             onInverseToggled(false);
         }
         restoreDisplay();
@@ -440,26 +397,20 @@ public class Calculator extends Activity
     @Override
     protected void onResume() {
         super.onResume();
-        if (mDisplayView.isToolbarVisible()) {
-            showAndMaybeHideToolbar();
-        }
         // If HistoryFragment is showing, hide the main Calculator elements from accessibility.
         // This is because Talkback does not use visibility as a cue for RelativeLayout elements,
         // and RelativeLayout is the base class of DragLayout.
         // If we did not do this, it would be possible to traverse to main Calculator elements from
         // HistoryFragment.
         mMainCalculator.setImportantForAccessibility(
-                mDragLayout.isOpen() ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+                mMainCalculator.getCurrentState() == R.id.end_state
+                        ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
                         : View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
     }
 
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         mEvaluator.cancelAll(true);
-        // If there's an animation in progress, cancel it first to ensure our state is up-to-date.
-        if (mCurrentAnimator != null) {
-            mCurrentAnimator.cancel();
-        }
 
         super.onSaveInstanceState(outState);
         outState.putInt(KEY_DISPLAY_STATE, mCurrentState.ordinal());
@@ -473,7 +424,6 @@ public class Calculator extends Activity
         }
         outState.putByteArray(KEY_EVAL_STATE, byteArrayStream.toByteArray());
         outState.putBoolean(KEY_INVERSE_MODE, mInverseToggle.isSelected());
-        outState.putBoolean(KEY_SHOW_TOOLBAR, mDisplayView.isToolbarVisible());
         // We must wait for asynchronous writes to complete, since outState may contain
         // references to expressions being written.
         mEvaluator.waitForWrites();
@@ -491,19 +441,9 @@ public class Calculator extends Activity
             }
             mCurrentState = state;
 
-            if (mCurrentState == CalculatorState.RESULT) {
-                // No longer do this for ERROR; allow mistakes to be corrected.
-                mDeleteButton.setVisibility(View.GONE);
-                mClearButton.setVisibility(View.VISIBLE);
-            } else {
-                mDeleteButton.setVisibility(View.VISIBLE);
-                mClearButton.setVisibility(View.GONE);
-            }
-
             if (mIsOneLine) {
                 if (mCurrentState == CalculatorState.RESULT
-                        || mCurrentState == CalculatorState.EVALUATE
-                        || mCurrentState == CalculatorState.ANIMATE) {
+                        || mCurrentState == CalculatorState.EVALUATE) {
                     mFormulaText.setVisibility(View.VISIBLE);
                     mResultText.setVisibility(View.VISIBLE);
                 } else if (mCurrentState == CalculatorState.ERROR) {
@@ -516,18 +456,15 @@ public class Calculator extends Activity
             }
 
             if (mCurrentState == CalculatorState.ERROR) {
-                final int errorColor =
-                        ContextCompat.getColor(this, R.color.calculator_error_color);
+                final int errorColor = ContextCompat.getColor(this,
+                        com.google.android.material.R.color.design_default_color_error);
                 mFormulaText.setTextColor(errorColor);
                 mResultText.setTextColor(errorColor);
-                getWindow().setStatusBarColor(errorColor);
             } else if (mCurrentState != CalculatorState.RESULT) {
                 mFormulaText.setTextColor(
                         ContextCompat.getColor(this, R.color.display_formula_text_color));
                 mResultText.setTextColor(
                         ContextCompat.getColor(this, R.color.display_result_text_color));
-                getWindow().setStatusBarColor(
-                        ContextCompat.getColor(this, R.color.calculator_statusbar_color));
             }
 
             invalidateOptionsMenu();
@@ -542,12 +479,6 @@ public class Calculator extends Activity
 
     public boolean isOneLine() {
         return mIsOneLine;
-    }
-
-    @Override
-    protected void onDestroy() {
-        mDragLayout.removeDragCallback(this);
-        super.onDestroy();
     }
 
     /**
@@ -575,23 +506,13 @@ public class Calculator extends Activity
     }
 
     @Override
-    public void onUserInteraction() {
-        super.onUserInteraction();
-
-        // If there's an animation in progress, end it immediately, so the user interaction can
-        // be handled.
-        if (mCurrentAnimator != null) {
-            mCurrentAnimator.end();
-        }
-    }
-
-    @Override
     public boolean dispatchTouchEvent(MotionEvent e) {
         if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
             stopActionModeOrContextMenu();
 
             final HistoryFragment historyFragment = getHistoryFragment();
-            if (mDragLayout.isOpen() && historyFragment != null) {
+            if (mMainCalculator.getCurrentState() == R.id.end_state
+                && historyFragment != null) {
                 historyFragment.stopActionModeOrContextMenu();
             }
         }
@@ -602,21 +523,13 @@ public class Calculator extends Activity
     public void onBackPressed() {
         if (!stopActionModeOrContextMenu()) {
             final HistoryFragment historyFragment = getHistoryFragment();
-            if (mDragLayout.isOpen() && historyFragment != null) {
-                if (!historyFragment.stopActionModeOrContextMenu()) {
-                    removeHistoryFragment();
-                }
+            if (mMainCalculator.getCurrentState() == R.id.end_state
+                && historyFragment != null) {
+                mMainCalculator.transitionToStart();
                 return;
             }
-            if (mPadViewPager != null && mPadViewPager.getCurrentItem() != 0) {
-                // Select the previous pad.
-                mPadViewPager.setCurrentItem(mPadViewPager.getCurrentItem() - 1);
-            } else {
-                // If the user is currently looking at the first pad (or the pad is not paged),
-                // allow the system to handle the Back button.
-                super.onBackPressed();
-            }
         }
+        moveTaskToBack(true);
     }
 
     @Override
@@ -644,15 +557,12 @@ public class Calculator extends Activity
             case KeyEvent.KEYCODE_NUMPAD_ENTER:
             case KeyEvent.KEYCODE_ENTER:
             case KeyEvent.KEYCODE_DPAD_CENTER:
-                mCurrentButton = mEqualButton;
                 onEquals();
                 return true;
             case KeyEvent.KEYCODE_DEL:
-                mCurrentButton = mDeleteButton;
                 onDelete();
                 return true;
             case KeyEvent.KEYCODE_CLEAR:
-                mCurrentButton = mClearButton;
                 onClear();
                 return true;
             default:
@@ -668,7 +578,6 @@ public class Calculator extends Activity
                 }
                 char c = (char) raw;
                 if (c == '=') {
-                    mCurrentButton = mEqualButton;
                     onEquals();
                 } else {
                     addChars(String.valueOf(c), true);
@@ -727,7 +636,7 @@ public class Calculator extends Activity
     }
 
     private void removeHistoryFragment() {
-        final FragmentManager manager = getFragmentManager();
+        final FragmentManager manager = getSupportFragmentManager();
         if (manager != null && !manager.isDestroyed()) {
             manager.popBackStack(HistoryFragment.TAG, FragmentManager.POP_BACK_STACK_INCLUSIVE);
         }
@@ -795,89 +704,69 @@ public class Calculator extends Activity
         }
     }
 
-    /**
-     * Show the toolbar.
-     * Automatically hide it again if it's not relevant to current formula.
-     */
-    private void showAndMaybeHideToolbar() {
-        final boolean shouldBeVisible =
-                mCurrentState == CalculatorState.INPUT && mEvaluator.hasTrigFuncs();
-        mDisplayView.showToolbar(!shouldBeVisible);
-    }
-
-    /**
-     * Display or hide the toolbar depending on calculator state.
-     */
-    private void showOrHideToolbar() {
-        final boolean shouldBeVisible =
-                mCurrentState == CalculatorState.INPUT && mEvaluator.hasTrigFuncs();
-        if (shouldBeVisible) {
-            mDisplayView.showToolbar(false);
-        } else {
-            mDisplayView.hideToolbar();
-        }
-    }
-
     public void onButtonClick(View view) {
         // Any animation is ended before we get here.
-        mCurrentButton = view;
         stopActionModeOrContextMenu();
 
         // See onKey above for the rationale behind some of the behavior below:
         cancelUnrequested();
 
         final int id = view.getId();
-        switch (id) {
-            case R.id.eq:
-                onEquals();
-                break;
-            case R.id.del:
-                onDelete();
-                break;
-            case R.id.clr:
-                onClear();
-                return;  // Toolbar visibility adjusted at end of animation.
-            case R.id.toggle_inv:
-                final boolean selected = !mInverseToggle.isSelected();
-                mInverseToggle.setSelected(selected);
-                onInverseToggled(selected);
-                if (mCurrentState == CalculatorState.RESULT) {
-                    mResultText.redisplay();   // In case we cancelled reevaluation.
-                }
-                break;
-            case R.id.toggle_mode:
-                cancelIfEvaluating(false);
-                final boolean mode = !mEvaluator.getDegreeMode(Evaluator.MAIN_INDEX);
-                if (mCurrentState == CalculatorState.RESULT
-                        && mEvaluator.getExpr(Evaluator.MAIN_INDEX).hasTrigFuncs()) {
-                    // Capture current result evaluated in old mode.
-                    mEvaluator.collapse(mEvaluator.getMaxIndex());
-                    redisplayFormula();
-                }
-                // In input mode, we reinterpret already entered trig functions.
-                mEvaluator.setDegreeMode(mode);
-                onModeChanged(mode);
-                // Show the toolbar to highlight the mode change.
-                showAndMaybeHideToolbar();
-                setState(CalculatorState.INPUT);
-                mResultText.clear();
-                if (!haveUnprocessed()) {
-                    evaluateInstantIfNecessary();
-                }
-                return;
-            default:
-                cancelIfEvaluating(false);
-                if (haveUnprocessed()) {
-                    // For consistency, append as uninterpreted characters.
-                    // This may actually be useful for a left parenthesis.
-                    addChars(KeyMaps.toString(this, id), true);
-                } else {
-                    addExplicitKeyToExpr(id);
-                    redisplayAfterFormulaChange();
-                }
-                break;
+        if (id == R.id.eq) {
+            onEquals();
+        } else if (id == R.id.del) {
+            onDelete();
+        } else if (id == R.id.clr) {
+            onClear();
+            return;  // Toolbar visibility adjusted at end of animation.
+        } else if (id == R.id.toggle_inv) {
+            final boolean selected = !mInverseToggle.isSelected();
+            mInverseToggle.setSelected(selected);
+            onInverseToggled(selected);
+            if (mCurrentState == CalculatorState.RESULT) {
+                mResultText.redisplay();   // In case we cancelled reevaluation.
+            }
+        } else if (id == R.id.toggle_mode) {
+            cancelIfEvaluating(false);
+            final boolean mode = !mEvaluator.getDegreeMode(Evaluator.MAIN_INDEX);
+            if (mCurrentState == CalculatorState.RESULT
+                    && mEvaluator.getExpr(Evaluator.MAIN_INDEX).hasTrigFuncs()) {
+                // Capture current result evaluated in old mode.
+                mEvaluator.collapse(mEvaluator.getMaxIndex());
+                redisplayFormula();
+            }
+            // In input mode, we reinterpret already entered trig functions.
+            mEvaluator.setDegreeMode(mode);
+            onModeChanged(mode);
+            setState(CalculatorState.INPUT);
+            mResultText.clear();
+            if (!haveUnprocessed()) {
+                evaluateInstantIfNecessary();
+            }
+            return;
+        } else if (id == R.id.paren) {
+            String expr = mEvaluator.getExprAsString(0);
+            int openCount = expr.length() - expr.replace(KeyMaps.toString(this, R.id.lparen), "")
+                    .length();
+            int closeCount = expr.length() - expr.replace(KeyMaps.toString(this, R.id.rparen), "")
+                    .length();
+
+            if (openCount > closeCount && !expr.endsWith(KeyMaps.toString(this, R.id.lparen))) {
+                addChars(KeyMaps.toString(this, R.id.rparen), true);
+            } else {
+                addChars(KeyMaps.toString(this, R.id.lparen), true);
+            }
+        } else {
+            cancelIfEvaluating(false);
+            if (haveUnprocessed()) {
+                // For consistency, append as uninterpreted characters.
+                // This may actually be useful for a left parenthesis.
+                addChars(KeyMaps.toString(this, id), true);
+            } else {
+                addExplicitKeyToExpr(id);
+                redisplayAfterFormulaChange();
+            }
         }
-        showOrHideToolbar();
     }
 
     void redisplayFormula() {
@@ -893,17 +782,6 @@ public class Calculator extends Activity
                 ? getString(R.string.desc_formula) : null);
     }
 
-    @Override
-    public boolean onLongClick(View view) {
-        mCurrentButton = view;
-
-        if (view.getId() == R.id.del) {
-            onClear();
-            return true;
-        }
-        return false;
-    }
-
     // Initial evaluation completed successfully.  Initiate display.
     public void onEvaluate(long index, int initDisplayPrec, int msd, int leastDigPos,
             String truncatedWholeNumber) {
@@ -917,8 +795,7 @@ public class Calculator extends Activity
         mResultText.onEvaluate(index, initDisplayPrec, msd, leastDigPos, truncatedWholeNumber);
         if (mCurrentState != CalculatorState.INPUT) {
             // In EVALUATE, INIT, RESULT, or INIT_FOR_RESULT state.
-            onResult(mCurrentState == CalculatorState.EVALUATE /* animate */,
-                     mCurrentState == CalculatorState.INIT_FOR_RESULT
+            onResult(mCurrentState == CalculatorState.INIT_FOR_RESULT
                     || mCurrentState == CalculatorState.RESULT /* previously preserved */);
         }
     }
@@ -1022,65 +899,11 @@ public class Calculator extends Activity
         redisplayAfterFormulaChange();
     }
 
-    private void reveal(View sourceView, int colorRes, AnimatorListener listener) {
-        final ViewGroupOverlay groupOverlay =
-                (ViewGroupOverlay) getWindow().getDecorView().getOverlay();
-
-        final Rect displayRect = new Rect();
-        mDisplayView.getGlobalVisibleRect(displayRect);
-
-        // Make reveal cover the display and status bar.
-        final View revealView = new View(this);
-        revealView.setBottom(displayRect.bottom);
-        revealView.setLeft(displayRect.left);
-        revealView.setRight(displayRect.right);
-        revealView.setBackgroundColor(ContextCompat.getColor(this, colorRes));
-        groupOverlay.add(revealView);
-
-        final int[] clearLocation = new int[2];
-        sourceView.getLocationInWindow(clearLocation);
-        clearLocation[0] += sourceView.getWidth() / 2;
-        clearLocation[1] += sourceView.getHeight() / 2;
-
-        final int revealCenterX = clearLocation[0] - revealView.getLeft();
-        final int revealCenterY = clearLocation[1] - revealView.getTop();
-
-        final double x1_2 = Math.pow(revealView.getLeft() - revealCenterX, 2);
-        final double x2_2 = Math.pow(revealView.getRight() - revealCenterX, 2);
-        final double y_2 = Math.pow(revealView.getTop() - revealCenterY, 2);
-        final float revealRadius = (float) Math.max(Math.sqrt(x1_2 + y_2), Math.sqrt(x2_2 + y_2));
-
-        final Animator revealAnimator =
-                ViewAnimationUtils.createCircularReveal(revealView,
-                        revealCenterX, revealCenterY, 0.0f, revealRadius);
-        revealAnimator.setDuration(
-                getResources().getInteger(android.R.integer.config_longAnimTime));
-        revealAnimator.addListener(listener);
-
-        final Animator alphaAnimator = ObjectAnimator.ofFloat(revealView, View.ALPHA, 0.0f);
-        alphaAnimator.setDuration(
-                getResources().getInteger(android.R.integer.config_mediumAnimTime));
-
-        final AnimatorSet animatorSet = new AnimatorSet();
-        animatorSet.play(revealAnimator).before(alphaAnimator);
-        animatorSet.setInterpolator(new AccelerateDecelerateInterpolator());
-        animatorSet.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animator) {
-                groupOverlay.remove(revealView);
-                mCurrentAnimator = null;
-            }
-        });
-
-        mCurrentAnimator = animatorSet;
-        animatorSet.start();
-    }
-
     private void announceClearedForAccessibility() {
         mResultText.announceForAccessibility(getResources().getString(R.string.cleared));
     }
 
-    public void onClearAnimationEnd() {
+    public void onClearEnd() {
          mUnprocessedChars = null;
          mResultText.clear();
          mEvaluator.clearMain();
@@ -1094,13 +917,7 @@ public class Calculator extends Activity
         }
         cancelIfEvaluating(true);
         announceClearedForAccessibility();
-        reveal(mCurrentButton, R.color.calculator_primary_color, new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                onClearAnimationEnd();
-                showOrHideToolbar();
-            }
-        });
+        onClearEnd();
     }
 
     // Evaluation encountered en error.  Display the error.
@@ -1110,16 +927,9 @@ public class Calculator extends Activity
             throw new AssertionError("Unexpected error source");
         }
         if (mCurrentState == CalculatorState.EVALUATE) {
-            setState(CalculatorState.ANIMATE);
             mResultText.announceForAccessibility(getResources().getString(errorResourceId));
-            reveal(mCurrentButton, R.color.calculator_error_color,
-                    new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                           setState(CalculatorState.ERROR);
-                           mResultText.onError(index, errorResourceId);
-                        }
-                    });
+            setState(CalculatorState.ERROR);
+            mResultText.onError(index, errorResourceId);
         } else if (mCurrentState == CalculatorState.INIT
                 || mCurrentState == CalculatorState.INIT_FOR_RESULT /* very unlikely */) {
             setState(CalculatorState.ERROR);
@@ -1129,14 +939,13 @@ public class Calculator extends Activity
         }
     }
 
-    // Animate movement of result into the top formula slot.
     // Result window now remains translated in the top slot while the result is displayed.
     // (We convert it back to formula use only when the user provides new input.)
     // Historical note: In the Lollipop version, this invisibly and instantaneously moved
     // formula and result displays back at the end of the animation.  We no longer do that,
     // so that we can continue to properly support scrolling of the result.
     // We assume the result already contains the text to be expanded.
-    private void onResult(boolean animate, boolean resultWasPreserved) {
+    private void onResult(boolean resultWasPreserved) {
         // Calculate the textSize that would be used to display the result in the formula.
         // For scrollable results just use the minimum textSize to maximize the number of digits
         // that are visible on screen.
@@ -1176,39 +985,12 @@ public class Calculator extends Activity
             mEvaluator.preserve(Evaluator.MAIN_INDEX, true);
         }
 
-        if (animate) {
-            mResultText.announceForAccessibility(getResources().getString(R.string.desc_eq));
-            mResultText.announceForAccessibility(mResultText.getText());
-            setState(CalculatorState.ANIMATE);
-            final AnimatorSet animatorSet = new AnimatorSet();
-            animatorSet.playTogether(
-                    ObjectAnimator.ofPropertyValuesHolder(mResultText,
-                            PropertyValuesHolder.ofFloat(View.SCALE_X, resultScale),
-                            PropertyValuesHolder.ofFloat(View.SCALE_Y, resultScale),
-                            PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, resultTranslationY)),
-                    ObjectAnimator.ofArgb(mResultText, TEXT_COLOR, formulaTextColor),
-                    ObjectAnimator.ofFloat(mFormulaContainer, View.TRANSLATION_Y,
-                            formulaTranslationY));
-            animatorSet.setDuration(getResources().getInteger(
-                    android.R.integer.config_longAnimTime));
-            animatorSet.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    setState(CalculatorState.RESULT);
-                    mCurrentAnimator = null;
-                }
-            });
-
-            mCurrentAnimator = animatorSet;
-            animatorSet.start();
-        } else /* No animation desired; get there fast when restarting */ {
-            mResultText.setScaleX(resultScale);
-            mResultText.setScaleY(resultScale);
-            mResultText.setTranslationY(resultTranslationY);
-            mResultText.setTextColor(formulaTextColor);
-            mFormulaContainer.setTranslationY(formulaTranslationY);
-            setState(CalculatorState.RESULT);
-        }
+        mResultText.setScaleX(resultScale);
+        mResultText.setScaleY(resultScale);
+        mResultText.setTranslationY(resultTranslationY);
+        mResultText.setTextColor(formulaTextColor);
+        mFormulaContainer.setTranslationY(formulaTranslationY);
+        setState(CalculatorState.RESULT);
     }
 
     // Restore positions of the formula and result displays back to their original,
@@ -1234,8 +1016,7 @@ public class Calculator extends Activity
                 // handle expressions to which they refer?
                 mEvaluator.clearEverything();
                 // TODO: It's not clear what we should really do here. This is an initial hack.
-                // May want to make onClearAnimationEnd() private if/when we fix this.
-                onClearAnimationEnd();
+                onClearEnd();
                 mEvaluatorCallback.onMemoryStateChanged();
                 onBackPressed();
             } else if (Evaluator.TIMEOUT_DIALOG_TAG.equals(fragment.getTag())) {
@@ -1275,76 +1056,29 @@ public class Calculator extends Activity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_history:
-                showHistoryFragment();
-                return true;
-            case R.id.menu_leading:
-                displayFull();
-                return true;
-            case R.id.menu_fraction:
-                displayFraction();
-                return true;
-            case R.id.menu_licenses:
-                startActivity(new Intent(this, Licenses.class));
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        int itemId = item.getItemId();
+        if (itemId == R.id.menu_history) {
+            mMainCalculator.transitionToEnd();
+            return true;
+        } else if (itemId == R.id.menu_leading) {
+            displayFull();
+            return true;
+        } else if (itemId == R.id.menu_fraction) {
+            displayFraction();
+            return true;
+        } else if (itemId == R.id.menu_licenses) {
+            startActivity(new Intent(this, Licenses.class));
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
-
-    /* Begin override CloseCallback method. */
-
-    @Override
-    public void onClose() {
-        removeHistoryFragment();
-    }
-
-    /* End override CloseCallback method. */
-
-    /* Begin override DragCallback methods */
-
-    public void onStartDraggingOpen() {
-        mDisplayView.hideToolbar();
-        showHistoryFragment();
-    }
-
-    @Override
-    public void onInstanceStateRestored(boolean isOpen) {
-    }
-
-    @Override
-    public void whileDragging(float yFraction) {
-    }
-
-    @Override
-    public boolean shouldCaptureView(View view, int x, int y) {
-        return view.getId() == R.id.history_frame
-            && (mDragLayout.isMoving() || mDragLayout.isViewUnder(view, x, y));
-    }
-
-    @Override
-    public int getDisplayHeight() {
-        return mDisplayView.getMeasuredHeight();
-    }
-
-    /* End override DragCallback methods */
 
     /**
      * Change evaluation state to one that's friendly to the history fragment.
      * Return false if that was not easily possible.
      */
     private boolean prepareForHistory() {
-        if (mCurrentState == CalculatorState.ANIMATE) {
-            // End the current animation and signal that preparation has failed.
-            // onUserInteraction is unreliable and onAnimationEnd() is asynchronous, so we
-            // aren't guaranteed to be out of the ANIMATE state by the time prepareForHistory is
-            // called.
-            if (mCurrentAnimator != null) {
-                mCurrentAnimator.end();
-            }
-            return false;
-        } else if (mCurrentState == CalculatorState.EVALUATE) {
+        if (mCurrentState == CalculatorState.EVALUATE) {
             // Cancel current evaluation
             cancelIfEvaluating(true /* quiet */ );
             setState(CalculatorState.INPUT);
@@ -1361,7 +1095,7 @@ public class Calculator extends Activity
     }
 
     private HistoryFragment getHistoryFragment() {
-        final FragmentManager manager = getFragmentManager();
+        final FragmentManager manager = getSupportFragmentManager();
         if (manager == null || manager.isDestroyed()) {
             return null;
         }
@@ -1375,17 +1109,14 @@ public class Calculator extends Activity
             return;
         }
 
-        final FragmentManager manager = getFragmentManager();
+        final FragmentManager manager = getSupportFragmentManager();
         if (manager == null || manager.isDestroyed() || !prepareForHistory()) {
-            // If the history fragment can not be shown, close the draglayout.
-            mDragLayout.setClosed();
             return;
         }
 
         stopActionModeOrContextMenu();
         manager.beginTransaction()
                 .replace(R.id.history_frame, new HistoryFragment(), HistoryFragment.TAG)
-                .setTransition(FragmentTransaction.TRANSIT_NONE)
                 .addToBackStack(HistoryFragment.TAG)
                 .commit();
 
@@ -1468,7 +1199,6 @@ public class Calculator extends Activity
                 }
             }
             if (k != View.NO_ID) {
-                mCurrentButton = findViewById(k);
                 if (explicit) {
                     addExplicitKeyToExpr(k);
                 } else {
@@ -1483,7 +1213,6 @@ public class Calculator extends Activity
             }
             int f = KeyMaps.funForString(moreChars, current);
             if (f != View.NO_ID) {
-                mCurrentButton = findViewById(f);
                 if (explicit) {
                     addExplicitKeyToExpr(f);
                 } else {
@@ -1499,12 +1228,10 @@ public class Calculator extends Activity
             // There are characters left, but we can't convert them to button presses.
             mUnprocessedChars = moreChars.substring(current);
             redisplayAfterFormulaChange();
-            showOrHideToolbar();
             return;
         }
         mUnprocessedChars = null;
         redisplayAfterFormulaChange();
-        showOrHideToolbar();
     }
 
     private void clearIfNotInputState() {

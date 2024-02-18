@@ -25,6 +25,8 @@
     <!-- Constant for pi (i.e. "3.1415…"). [CHAR_LIMIT=1] -->
     <string name="const_pi" translatable="false">π</string>
 
+    <!-- Parenthesis (e.g. "log(", "2 × (3 - 1)". [CHAR_LIMIT=1] -->
+    <string name="paren" translatable="false">( )</string>
     <!-- Left parenthesis (e.g. "log(", "2 × (3 - 1)". [CHAR_LIMIT=1] -->
     <string name="lparen" translatable="false">(</string>
     <!-- Right parenthesis (e.g. "log(2)", "(3 - 1) × 2". [CHAR_LIMIT=1] -->
@@ -122,8 +124,6 @@
       Announced when all characters are removed from Formula, e.g. after clear. [CHAR_LIMIT=NONE]
       -->
     <string name="cleared">cleared</string>
-    <!-- Delete button to remove last entered token. [CHAR_LIMIT=4] -->
-    <string name="del">del</string>
     <!-- Toggle button to show/hide inverse functions. [CHAR_LIMIT=4] -->
     <string name="inv" translatable="false">inv</string>
 
@@ -151,6 +151,8 @@
     <!-- Content description for '.' button. [CHAR_LIMIT=NONE] -->
     <string name="desc_dec_point">point</string>
 
+    <!-- Content description for '( )' button. [CHAR_LIMIT=NONE] -->
+    <string name="desc_paren">parenthesis</string>
     <!-- Content description for '(' button. [CHAR_LIMIT=NONE] -->
     <string name="desc_lparen">left parenthesis</string>
     <!-- Content description for ')' button. [CHAR_LIMIT=NONE] -->
@@ -233,16 +235,6 @@
     <string name="desc_formula">No formula</string>
     <!-- Content description for result field when it is empty. [CHAR_LIMIT=NONE] -->
     <string name="desc_result">No result</string>
-
-    <!-- Content description for the numeric/operation pad when slide-able. [CHAR_LIMIT=NONE] -->
-    <string name="desc_num_pad">Numbers and basic operations</string>
-    <!-- Content description for the advanced pad when slide-able. [CHAR_LIMIT=NONE] -->
-    <string name="desc_adv_pad">Advanced operations</string>
-    <!-- Content description for the pad pages when slide-able. -->
-    <string-array name="desc_pad_pages" translatable="false">
-        <item>@string/desc_num_pad</item>
-        <item>@string/desc_adv_pad</item>
-    </string-array>
 
     <!-- Error displayed when expression evaluates to an undefined result. [CHAR_LIMIT=20] -->
     <string name="error_nan">Not a number</string>

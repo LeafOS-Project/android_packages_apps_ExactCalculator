@@ -32,9 +32,10 @@ android_app {
     product_specific: true,
 
     static_libs: [
-        "cr",
-        "androidx.legacy_legacy-support-v4",
+        // DO NOT EDIT THIS SECTION MANUALLY
         "androidx.gridlayout_gridlayout",
-        "androidx.recyclerview_recyclerview",
+        "androidx.webkit_webkit",
+        "ExactCalculator_com.google.android.material_material",
+        "ExactCalculator_com.hp_crcalc",
     ],
 }

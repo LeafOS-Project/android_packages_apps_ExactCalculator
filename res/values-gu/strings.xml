@@ -22,7 +22,6 @@
     <string name="mode_deg" msgid="1146123354434332479">"deg"</string>
     <string name="mode_rad" msgid="1434228830085760996">"rad"</string>
     <string name="cleared" msgid="3952521190281880880">"સાફ કર્યા"</string>
-    <string name="del" msgid="5878069000864178910">"del"</string>
     <string name="desc_const_e" msgid="1889187337970539507">"યુલરનો નંબર"</string>
     <string name="desc_const_pi" msgid="5430918714009441655">"પાઇ"</string>
     <string name="desc_dec_point" msgid="5725254504360445023">"પોઇન્ટ"</string>
@@ -58,8 +57,6 @@
     <string name="desc_inv_on" msgid="2515675590767677178">"વ્યુત્ક્રમ કાર્ય છુપાવો"</string>
     <string name="desc_formula" msgid="8056588859637585007">"કોઇ ફોર્મૂલા નથી"</string>
     <string name="desc_result" msgid="1794073190203126821">"કોઈ પરિણામ નથી"</string>
-    <string name="desc_num_pad" msgid="515720457459745571">"નંબરો અને મૂળભૂત ઓપરેશન્સ"</string>
-    <string name="desc_adv_pad" msgid="3794276256462677914">"વિગતવાર ઓપરેશન્સ"</string>
     <string name="error_nan" msgid="5674077944929888710">"કોઈ સંખ્યા નથી"</string>
     <string name="error_syntax" msgid="4786987111228645602">"ખોટી પદાવલિ"</string>
     <string name="error_aborted" msgid="3402238176316342537">"રદ કરેલ"</string>

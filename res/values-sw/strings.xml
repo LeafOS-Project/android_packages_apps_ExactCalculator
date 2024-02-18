@@ -22,7 +22,6 @@
     <string name="mode_deg" msgid="1146123354434332479">"digrii"</string>
     <string name="mode_rad" msgid="1434228830085760996">"rediani"</string>
     <string name="cleared" msgid="3952521190281880880">"zimefutwa"</string>
-    <string name="del" msgid="5878069000864178910">"futa"</string>
     <string name="desc_const_e" msgid="1889187337970539507">"nambari ya Euler"</string>
     <string name="desc_const_pi" msgid="5430918714009441655">"pi"</string>
     <string name="desc_dec_point" msgid="5725254504360445023">"nukta"</string>
@@ -58,8 +57,6 @@
     <string name="desc_inv_on" msgid="2515675590767677178">"ficha chaguo za kukokotoa za kinyume"</string>
     <string name="desc_formula" msgid="8056588859637585007">"Hakuna fomula"</string>
     <string name="desc_result" msgid="1794073190203126821">"Hakuna matokeo"</string>
-    <string name="desc_num_pad" msgid="515720457459745571">"Nambari na utendaji wa msingi"</string>
-    <string name="desc_adv_pad" msgid="3794276256462677914">"Utendaji wa kina"</string>
     <string name="error_nan" msgid="5674077944929888710">"Si nambari"</string>
     <string name="error_syntax" msgid="4786987111228645602">"Hesabu yenye hitilafu"</string>
     <string name="error_aborted" msgid="3402238176316342537">"Imeghairiwa"</string>

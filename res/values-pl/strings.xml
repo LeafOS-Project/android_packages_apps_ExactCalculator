@@ -22,7 +22,6 @@
     <string name="mode_deg" msgid="1146123354434332479">"deg"</string>
     <string name="mode_rad" msgid="1434228830085760996">"rad"</string>
     <string name="cleared" msgid="3952521190281880880">"wyczyszczone"</string>
-    <string name="del" msgid="5878069000864178910">"←"</string>
     <string name="desc_const_e" msgid="1889187337970539507">"liczba Eulera"</string>
     <string name="desc_const_pi" msgid="5430918714009441655">"pi"</string>
     <string name="desc_dec_point" msgid="5725254504360445023">"przecinek"</string>
@@ -58,8 +57,6 @@
     <string name="desc_inv_on" msgid="2515675590767677178">"ukryj funkcje odwrotne"</string>
     <string name="desc_formula" msgid="8056588859637585007">"Brak formuły"</string>
     <string name="desc_result" msgid="1794073190203126821">"Brak wyników"</string>
-    <string name="desc_num_pad" msgid="515720457459745571">"Liczby i operacje podstawowe"</string>
-    <string name="desc_adv_pad" msgid="3794276256462677914">"Operacje zaawansowane"</string>
     <string name="error_nan" msgid="5674077944929888710">"To nie liczba"</string>
     <string name="error_syntax" msgid="4786987111228645602">"Błędne wyrażenie"</string>
     <string name="error_aborted" msgid="3402238176316342537">"Przerwano"</string>

@@ -19,21 +19,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:clipChildren="false"
+    android:clipChildren="true"
     android:orientation="vertical">
 
-    <Toolbar
+    <androidx.appcompat.widget.Toolbar
         android:id="@+id/history_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?android:attr/colorPrimary"
-        android:elevation="4dip"
-        android:minHeight="?android:attr/actionBarSize"
+        android:minHeight="?attr/actionBarSize"
         android:navigationContentDescription="@string/desc_navigate_up"
-        android:navigationIcon="?android:attr/homeAsUpIndicator"
-        android:popupTheme="@android:style/ThemeOverlay.Material.Light"
-        android:theme="@style/Theme.Toolbar"
-        android:title="@string/title_history" />
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:title="@string/title_history" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/history_recycler_view"
@@ -42,8 +38,8 @@
         android:background="@color/display_background_color"
         android:clipChildren="false"
         android:clipToPadding="false"
+        android:nestedScrollingEnabled="false"
         android:paddingBottom="@dimen/history_divider_padding"
-        android:visibility="invisible"
         app:layoutManager="LinearLayoutManager"
         app:reverseLayout="true" />
 

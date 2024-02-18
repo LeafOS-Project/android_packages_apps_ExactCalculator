@@ -22,7 +22,6 @@
     <string name="mode_deg" msgid="1146123354434332479">"grá"</string>
     <string name="mode_rad" msgid="1434228830085760996">"bog"</string>
     <string name="cleared" msgid="3952521190281880880">"hreinsað"</string>
-    <string name="del" msgid="5878069000864178910">"eyð"</string>
     <string name="desc_const_e" msgid="1889187337970539507">"Tala Eulers"</string>
     <string name="desc_const_pi" msgid="5430918714009441655">"pí"</string>
     <string name="desc_dec_point" msgid="5725254504360445023">"komma"</string>
@@ -58,8 +57,6 @@
     <string name="desc_inv_on" msgid="2515675590767677178">"fela andhverf föll"</string>
     <string name="desc_formula" msgid="8056588859637585007">"Engin formúla"</string>
     <string name="desc_result" msgid="1794073190203126821">"Engar niðurstöður"</string>
-    <string name="desc_num_pad" msgid="515720457459745571">"Tölur og einfaldar aðgerðir"</string>
-    <string name="desc_adv_pad" msgid="3794276256462677914">"Ítarlegri aðgerðir"</string>
     <string name="error_nan" msgid="5674077944929888710">"Ekki tala"</string>
     <string name="error_syntax" msgid="4786987111228645602">"Röng segð"</string>
     <string name="error_aborted" msgid="3402238176316342537">"Hætt við"</string>
